@@ -22,11 +22,11 @@ document.addEventListener("contextmenu", (e) => e.preventDefault(), false);
 /** Testing zoom and pan */
 document
   .getElementById("zoom-in")!
-  .addEventListener("click", () => infiniteCanvas.zoom(0.95));
+  .addEventListener("click", () => infiniteCanvas.zoom(1.05));
 
 document
   .getElementById("zoom-out")!
-  .addEventListener("click", () => infiniteCanvas.zoom(1.05));
+  .addEventListener("click", () => infiniteCanvas.zoom(0.95));
 
 document
   .getElementById("move-left")!

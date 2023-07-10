@@ -58,22 +58,22 @@ export class InfiniteCanvas {
   }
 
   offsetLeft(amount: number): void {
-    this.#offsetX += amount;
-    this.#draw();
-  }
-
-  offsetRight(amount: number): void {
     this.#offsetX -= amount;
     this.#draw();
   }
 
+  offsetRight(amount: number): void {
+    this.#offsetX += amount;
+    this.#draw();
+  }
+
   offsetUp(amount: number): void {
-    this.#offsetY += amount;
+    this.#offsetY -= amount;
     this.#draw();
   }
 
   offsetDown(amount: number): void {
-    this.#offsetY -= amount;
+    this.#offsetY += amount;
     this.#draw();
   }
 
@@ -130,50 +130,20 @@ export class InfiniteCanvas {
       const prevTouch1X = this.#prevTouch[1]!.pageX;
       const prevTouch1Y = this.#prevTouch[1]!.pageY;
 
-      // get midpoints
-      const midX = (touch0X + touch1X) / 2;
-      const midY = (touch0Y + touch1Y) / 2;
-      const prevMidX = (prevTouch0X + prevTouch1X) / 2;
-      const prevMidY = (prevTouch0Y + prevTouch1Y) / 2;
-
-      // calculate the distances between the touches
-      const hypot = Math.sqrt(
-        Math.pow(touch0X - touch1X, 2) + Math.pow(touch0Y - touch1Y, 2)
-      );
-      const prevHypot = Math.sqrt(
-        Math.pow(prevTouch0X - prevTouch1X, 2) +
-          Math.pow(prevTouch0Y - prevTouch1Y, 2)
+      const scaleAmount = this.#zoom(
+        [touch0X, touch0Y],
+        [prevTouch0X, prevTouch0Y],
+        [touch1X, touch1Y],
+        [prevTouch1X, prevTouch1Y]
       );
 
-      // calculate the screen scale change
-      var zoomAmount = hypot / prevHypot;
-      this.zoom(zoomAmount);
-
-      const scaleAmount = 1 - zoomAmount;
-
-      // calculate how many pixels the midpoints have moved in the x and y direction
-      const panX = midX - prevMidX;
-      const panY = midY - prevMidY;
-
-      // scale this movement based on the zoom level
-      this.#offsetX += panX / this.#scale;
-      this.#offsetY += panY / this.#scale;
-
-      // Get the relative position of the middle of the zoom.
-      // 0, 0 would be top left.
-      // 0, 1 would be top right etc.
-      var zoomRatioX = midX / (this.canvas?.clientWidth ?? 1);
-      var zoomRatioY = midY / (this.canvas?.clientHeight ?? 1);
-
-      // calculate the amounts zoomed from each edge of the screen
-      const unitsZoomedX = this.trueWidth() * scaleAmount;
-      const unitsZoomedY = this.trueHeight() * scaleAmount;
-
-      const unitsAddLeft = unitsZoomedX * zoomRatioX;
-      const unitsAddTop = unitsZoomedY * zoomRatioY;
-
-      this.#offsetX += unitsAddLeft;
-      this.#offsetY += unitsAddTop;
+      this.#pan(
+        scaleAmount,
+        [touch0X, touch0Y],
+        [prevTouch0X, prevTouch0Y],
+        [touch1X, touch1Y],
+        [prevTouch1X, prevTouch1Y]
+      );
 
       this.#draw();
     }
@@ -182,10 +152,71 @@ export class InfiniteCanvas {
     this.#prevTouch[1] = touches[1];
   }
 
+  #pan(
+    scaleAmount: number,
+    [touch0X, touch0Y]: [number, number],
+    [prevTouch0X, prevTouch0Y]: [number, number],
+    [touch1X, touch1Y]: [number, number],
+    [prevTouch1X, prevTouch1Y]: [number, number]
+  ): void {
+    // get midpoints
+    const midX = (touch0X + touch1X) / 2;
+    const midY = (touch0Y + touch1Y) / 2;
+    const prevMidX = (prevTouch0X + prevTouch1X) / 2;
+    const prevMidY = (prevTouch0Y + prevTouch1Y) / 2;
+
+    // Calculate how many pixels the midpoints have moved in the x and y direction
+    const panX = midX - prevMidX;
+    const panY = midY - prevMidY;
+
+    // Scale this movement based on the zoom level
+    this.#offsetX += panX / this.#scale;
+    this.#offsetY += panY / this.#scale;
+
+    // Get the relative position of the middle of the zoom.
+    // 0, 0 would be top left.
+    // 0, 1 would be top right etc.
+    var zoomRatioX = midX / (this.canvas?.clientWidth ?? 1);
+    var zoomRatioY = midY / (this.canvas?.clientHeight ?? 1);
+
+    // calculate the amounts zoomed from each edge of the screen
+    const unitsZoomedX = this.trueWidth() * scaleAmount;
+    const unitsZoomedY = this.trueHeight() * scaleAmount;
+
+    const unitsAddLeft = unitsZoomedX * zoomRatioX;
+    const unitsAddTop = unitsZoomedY * zoomRatioY;
+
+    this.#offsetX += unitsAddLeft;
+    this.#offsetY += unitsAddTop;
+  }
+
+  #zoom(
+    [touch0X, touch0Y]: [number, number],
+    [prevTouch0X, prevTouch0Y]: [number, number],
+    [touch1X, touch1Y]: [number, number],
+    [prevTouch1X, prevTouch1Y]: [number, number]
+  ): number {
+    const hypot = Math.sqrt(
+      Math.pow(touch0X - touch1X, 2) + Math.pow(touch0Y - touch1Y, 2)
+    );
+
+    const prevHypot = Math.sqrt(
+      Math.pow(prevTouch0X - prevTouch1X, 2) +
+        Math.pow(prevTouch0Y - prevTouch1Y, 2)
+    );
+
+    const zoomAmount = hypot / prevHypot;
+    this.zoom(zoomAmount);
+
+    const scaleAmount = 1 - zoomAmount;
+    return scaleAmount;
+  }
+
   #drawGrid(): void {
     if (this.canvas && this.context) {
       this.context.strokeStyle = "rgb(229,231,235)";
       this.context.lineWidth = 1;
+      this.context.font = "10px serif";
       this.context.beginPath();
 
       const width = this.canvas?.clientWidth ?? 0;
@@ -199,6 +230,12 @@ export class InfiniteCanvas {
         const source = x;
         this.context.moveTo(source, 0);
         this.context.lineTo(source, height);
+
+        this.context.fillText(
+          `${this.toScreenX(source).toFixed(0)}`,
+          source,
+          10
+        );
       }
 
       for (
@@ -209,6 +246,12 @@ export class InfiniteCanvas {
         const destination = y;
         this.context.moveTo(0, destination);
         this.context.lineTo(width, destination);
+
+        this.context.fillText(
+          `${this.toScreenY(destination).toFixed(0)}`,
+          0,
+          destination
+        );
       }
       this.context.stroke();
     }

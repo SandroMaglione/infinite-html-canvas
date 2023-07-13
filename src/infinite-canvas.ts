@@ -31,24 +31,24 @@ export class InfiniteCanvas {
     }
   }
 
-  toScreenX(xTrue: number): number {
-    return (xTrue + this.#offsetX) * this.#scale;
+  toVirtualX(xReal: number): number {
+    return (xReal + this.#offsetX) * this.#scale;
   }
-  toScreenY(yTrue: number): number {
-    return (yTrue + this.#offsetY) * this.#scale;
+  toVirtualY(yReal: number): number {
+    return (yReal + this.#offsetY) * this.#scale;
   }
-  toTrueX(xScreen: number): number {
-    return xScreen / this.#scale - this.#offsetX;
+  toRealX(xVirtual: number): number {
+    return xVirtual / this.#scale - this.#offsetX;
   }
-  toTrueY(yScreen: number): number {
-    return yScreen / this.#scale - this.#offsetY;
+  toRealY(yVirtual: number): number {
+    return yVirtual / this.#scale - this.#offsetY;
   }
 
-  trueHeight(): number {
+  virtualHeight(): number {
     return (this.canvas?.clientHeight ?? 0) / this.#scale;
   }
 
-  trueWidth(): number {
+  virtualWidth(): number {
     return (this.canvas?.clientWidth ?? 0) / this.#scale;
   }
 
@@ -176,12 +176,12 @@ export class InfiniteCanvas {
     // Get the relative position of the middle of the zoom.
     // 0, 0 would be top left.
     // 0, 1 would be top right etc.
-    var zoomRatioX = midX / (this.canvas?.clientWidth ?? 1);
-    var zoomRatioY = midY / (this.canvas?.clientHeight ?? 1);
+    const zoomRatioX = midX / (this.canvas?.clientWidth ?? 1);
+    const zoomRatioY = midY / (this.canvas?.clientHeight ?? 1);
 
     // calculate the amounts zoomed from each edge of the screen
-    const unitsZoomedX = this.trueWidth() * scaleAmount;
-    const unitsZoomedY = this.trueHeight() * scaleAmount;
+    const unitsZoomedX = this.virtualWidth() * scaleAmount;
+    const unitsZoomedY = this.virtualHeight() * scaleAmount;
 
     const unitsAddLeft = unitsZoomedX * zoomRatioX;
     const unitsAddTop = unitsZoomedY * zoomRatioY;
@@ -219,8 +219,8 @@ export class InfiniteCanvas {
       this.context.font = "10px serif";
       this.context.beginPath();
 
-      const width = this.canvas?.clientWidth ?? 0;
-      const height = this.canvas?.clientHeight ?? 0;
+      const width = this.canvas.clientWidth;
+      const height = this.canvas.clientHeight;
 
       for (
         let x = (this.#offsetX % this.cellSize) * this.#scale;
@@ -232,7 +232,7 @@ export class InfiniteCanvas {
         this.context.lineTo(source, height);
 
         this.context.fillText(
-          `${this.toScreenX(source).toFixed(0)}`,
+          `${this.toVirtualX(source).toFixed(0)}`,
           source,
           10
         );
@@ -248,7 +248,7 @@ export class InfiniteCanvas {
         this.context.lineTo(width, destination);
 
         this.context.fillText(
-          `${this.toScreenY(destination).toFixed(0)}`,
+          `${this.toVirtualY(destination).toFixed(0)}`,
           0,
           destination
         );

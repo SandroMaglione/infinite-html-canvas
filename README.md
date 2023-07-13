@@ -1,4 +1,4 @@
-# `Infinite canvas`
+# `Infinite HTML <canvas>`
 <p>
   <a href="https://github.com/SandroMaglione">
     <img alt="GitHub: SandroMaglione" src="https://img.shields.io/github/followers/SandroMaglione?label=Follow&style=social" target="_blank" />
